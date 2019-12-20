@@ -1,5 +1,5 @@
 import React, {Component, Fragment} from "react";
-import {findNodeHandle, ActivityIndicator, TextInput, View} from "react-native";
+import {findNodeHandle, ActivityIndicator, TextInput, View, Keyboard} from "react-native";
 import {string, bool, number, func} from "prop-types";
 import Dropdown from "../Dropdown";
 import {capitalizeFirstLetter} from "../../utils/string";
@@ -197,6 +197,7 @@ class Autocomplete extends Component {
               }
             }}
           />
+
           {loading && (
             <ActivityIndicator
               style={[styles.spinner, spinnerStyle]}
@@ -205,6 +206,7 @@ class Autocomplete extends Component {
             />
           )}
         </View>
+
         {items && items.length > 0 && (
           <Dropdown
             ref={this.dropdown}

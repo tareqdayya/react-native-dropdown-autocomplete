@@ -1,22 +1,18 @@
-import React, {PureComponent} from "react";
-import {
-  View,
-  Animated,
-  Dimensions,
-  Platform,
-  FlatList,
-  Text,
-  ViewPropTypes,
-} from "react-native";
+import React, { PureComponent } from "react";
+import { Animated, Dimensions, FlatList, Platform, Text, View, ViewPropTypes } from "react-native";
 import PropTypes from "prop-types";
 import Ripple from "react-native-material-ripple";
 import DropdownItem from "../DropdownItem";
 import styles from "./Dropdown.styles";
-import {capitalizeFirstLetter, highlightString} from "../../utils/string";
-import {NO_DATA} from "../../constants/Autocomplete";
-import {theme} from "../../constants/Theme";
+import { capitalizeFirstLetter, highlightString } from "../../utils/string";
+import { NO_DATA } from "../../constants/Autocomplete";
+import { theme } from "../../constants/Theme";
 import locales from "../../constants/Locales";
+
 export default class Dropdown extends PureComponent {
+  mainView;
+  inputOffsetToPage;
+
   constructor(props) {
     super(props);
 
@@ -37,7 +33,7 @@ export default class Dropdown extends PureComponent {
     this.blur = () => this.onClose();
     this.focus = this.onPress;
 
-    const {value} = this.props;
+    const { value } = this.props;
 
     this.mounted = false;
     this.focused = false;
@@ -53,9 +49,9 @@ export default class Dropdown extends PureComponent {
   }
 
   componentWillReceiveProps(nextProps) {
-    const {value} = this.props;
+    const { value } = this.props;
     if (nextProps.value !== value) {
-      this.setState({value: nextProps.value});
+      this.setState({ value: nextProps.value });
     }
   }
 
@@ -75,7 +71,7 @@ export default class Dropdown extends PureComponent {
       itemPadding,
       rippleDuration,
       dropdownOffset,
-      dropdownMargins: {min: minMargin, max: maxMargin},
+      dropdownMargins: { min: minMargin, max: maxMargin },
       animationDuration,
       onDropdownShow,
       useNativeDriver,
@@ -95,7 +91,7 @@ export default class Dropdown extends PureComponent {
     }
     const dimensions = Dimensions.get("window");
     container.measureInWindow((x, y, containerWidth) => {
-      const {opacity} = this.state;
+      const { opacity } = this.state;
       const delay = Math.max(
         0,
         rippleDuration - animationDuration - (Date.now() - timestamp),
@@ -144,7 +140,7 @@ export default class Dropdown extends PureComponent {
             useNativeDriver,
           }).start(() => {
             if (this.mounted && Platform.OS === "ios") {
-              const {flashScrollIndicators} = this.scroll || {};
+              const { flashScrollIndicators } = this.scroll || {};
 
               if (typeof flashScrollIndicators === "function") {
                 flashScrollIndicators.call(this.scroll);
@@ -160,7 +156,7 @@ export default class Dropdown extends PureComponent {
   }
 
   close() {
-    const {onBlur, onDropdownClose} = this.props;
+    const { onBlur, onDropdownClose } = this.props;
 
     if (typeof onBlur === "function") {
       onBlur();
@@ -169,13 +165,13 @@ export default class Dropdown extends PureComponent {
       onDropdownClose();
     }
     if (this.mounted) {
-      this.setState({modal: false});
+      this.setState({ modal: false });
     }
   }
 
   onClose(val) {
-    const {onBlur, onDropdownClose} = this.props;
-    const {value} = this.state;
+    const { onBlur, onDropdownClose } = this.props;
+    const { value } = this.state;
     const finalValue = val || value;
 
     if (typeof onBlur === "function") {
@@ -185,12 +181,12 @@ export default class Dropdown extends PureComponent {
       onDropdownClose();
     }
     if (this.mounted) {
-      this.setState({value: finalValue, modal: false});
+      this.setState({ value: finalValue, modal: false });
     }
   }
 
   onSelect(index) {
-    const {data, onChangeValue, animationDuration, rippleDuration} = this.props;
+    const { data, onChangeValue, animationDuration, rippleDuration } = this.props;
 
     const value = data[index];
 
@@ -204,7 +200,7 @@ export default class Dropdown extends PureComponent {
   }
 
   onLayout(event) {
-    const {onLayout} = this.props;
+    const { onLayout } = this.props;
 
     if (typeof onLayout === "function") {
       onLayout(event);
@@ -212,25 +208,25 @@ export default class Dropdown extends PureComponent {
   }
 
   value() {
-    const {value} = this.state;
+    const { value } = this.state;
 
     return value;
   }
 
   selectedIndex() {
-    const {data} = this.props;
+    const { data } = this.props;
 
     return data.findIndex(item => item != null);
   }
 
   itemSize() {
-    const {fontSize, itemPadding} = this.props;
+    const { fontSize, itemPadding } = this.props;
 
     return Math.ceil(fontSize * 1.5 + itemPadding * 2);
   }
 
   visibleItemCount() {
-    const {data, itemCount, listHeader} = this.props;
+    const { data, itemCount, listHeader } = this.props;
     const properLength = listHeader ? data.length + 1 : data.length;
 
     return Math.min(properLength, itemCount);
@@ -241,15 +237,15 @@ export default class Dropdown extends PureComponent {
   }
 
   rippleInsets() {
-    const {rippleInsets} = this.props;
-    const {top = 16, right = 0, bottom = -8, left = 0} = rippleInsets || {};
+    const { rippleInsets } = this.props;
+    const { top = 16, right = 0, bottom = -8, left = 0 } = rippleInsets || {};
 
-    return {top, right, bottom, left};
+    return { top, right, bottom, left };
   }
 
   resetScrollOffset() {
-    const {selected} = this.state;
-    const {data, dropdownPosition} = this.props;
+    const { selected } = this.state;
+    const { data, dropdownPosition } = this.props;
 
     let offset = 0;
     const itemCount = data.length;
@@ -286,7 +282,7 @@ export default class Dropdown extends PureComponent {
     }
 
     if (this.scroll) {
-      this.scroll.scrollToOffset({offset, animated: false});
+      this.scroll.scrollToOffset({ offset, animated: false });
     }
   }
 
@@ -295,7 +291,7 @@ export default class Dropdown extends PureComponent {
   }
 
   keyExtractor(item, index) {
-    const {valueExtractor} = this.props;
+    const { valueExtractor } = this.props;
 
     return `${index}-${valueExtractor(item, index)}`;
   }
@@ -310,7 +306,7 @@ export default class Dropdown extends PureComponent {
       rippleSequential,
     } = this.props;
 
-    const {bottom, ...insets} = this.rippleInsets();
+    const { bottom, ...insets } = this.rippleInsets();
     const style = {
       ...insets,
 
@@ -332,10 +328,10 @@ export default class Dropdown extends PureComponent {
   }
 
   renderEmptyItem() {
-    const {noDataText, noDataTextStyle} = this.props;
+    const { noDataText, noDataTextStyle } = this.props;
 
     return (
-      <DropdownItem index={0} style={{paddingLeft: 15}}>
+      <DropdownItem index={0}>
         <Text style={[styles.listItemText, styles.noData, noDataTextStyle]}>
           {noDataText}
         </Text>
@@ -343,7 +339,7 @@ export default class Dropdown extends PureComponent {
     );
   }
 
-  renderItem({item, index}) {
+  renderItem({ item, index }) {
     const {
       highlightText,
       inputValue,
@@ -395,15 +391,16 @@ export default class Dropdown extends PureComponent {
       props.style,
       {
         height: this.itemSize(),
-        paddingLeft: 15,
+        paddingVertical: 12,
+        paddingLeft: 24,
       },
       rightContent
         ? {
-            display: "flex",
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }
         : {},
     ];
 
@@ -412,7 +409,7 @@ export default class Dropdown extends PureComponent {
         <Text
           style={[
             styles.listItemText,
-            rightContent ? {maxWidth: 200} : {},
+            rightContent ? { maxWidth: 200 } : {},
             listItemTextStyle,
           ]}
           numberOfLines={1}
@@ -420,6 +417,7 @@ export default class Dropdown extends PureComponent {
         >
           {text}
         </Text>
+
         {rightContent && (
           <View style={[styles.rightContent, rightContentStyle]}>
             <Text
@@ -435,21 +433,22 @@ export default class Dropdown extends PureComponent {
   }
 
   renderSeparator() {
-    const {separatorStyle} = this.props;
+    const { separatorStyle } = this.props;
 
-    return <View style={[styles.separator, separatorStyle]} />;
+    return <View style={[styles.separator, separatorStyle]}/>;
   }
 
   renderFooter() {
-    const {listFooterStyle} = this.props;
+    const { listFooterStyle } = this.props;
 
     return (
-      <View style={[styles.listItem, styles.listFooter, listFooterStyle]} />
+      // <View style={[styles.listItem, styles.listFooter, listFooterStyle]} />
+      null
     );
   }
 
   renderHeader() {
-    const {listHeader, listHeaderStyle, listHeaderTextStyle} = this.props;
+    const { listHeader, listHeaderStyle, listHeaderTextStyle } = this.props;
 
     return listHeader ? (
       <View style={[styles.listItem, styles.listHeader, listHeaderStyle]}>
@@ -473,9 +472,9 @@ export default class Dropdown extends PureComponent {
       ...props
     } = this.props;
 
-    const {data, itemPadding} = props;
+    const { data, itemPadding } = props;
 
-    const {left, top, width, modal} = this.state;
+    const { left, top, width, modal } = this.state;
 
     const itemCount = data.length;
     const visibleItemCount = this.visibleItemCount();
@@ -492,24 +491,27 @@ export default class Dropdown extends PureComponent {
 
     const itemData = itemCount ? data : [NO_DATA];
 
+    if (!modal) return null;
+
     return (
-      <View onLayout={this.onLayout} style={containerStyle}>
-        {modal && (
-          <View style={[styles.picker, pickerStyle, pickerStyleOverrides]}>
-            <FlatList
-              keyboardShouldPersistTaps="always"
-              ref={this.updateScrollRef}
-              data={itemData}
-              style={[styles.scroll, scrollStyle]}
-              renderItem={this.renderItem}
-              keyExtractor={this.keyExtractor}
-              scrollEnabled={visibleItemCount <= itemCount}
-              ItemSeparatorComponent={this.renderSeparator}
-              ListFooterComponent={this.renderFooter}
-              ListHeaderComponent={this.renderHeader}
-            />
-          </View>
-        )}
+      <View onLayout={this.onLayout}
+            style={[styles.containerView, containerStyle]}
+            ref={view => {
+              this.mainView = view;
+            }}>
+        <FlatList
+          keyboardShouldPersistTaps="always"
+          ref={this.updateScrollRef}
+          data={itemData}
+          style={[styles.scroll, scrollStyle]}
+          renderItem={this.renderItem}
+          keyExtractor={this.keyExtractor}
+          scrollEnabled={visibleItemCount <= itemCount}
+          ItemSeparatorComponent={this.renderSeparator}
+          // ListFooterComponent={this.renderFooter}
+          ListHeaderComponent={this.renderHeader}
+          nestedScrollEnabled
+        />
       </View>
     );
   }
@@ -598,10 +600,10 @@ Dropdown.propTypes = {
 
 Dropdown.defaultProps = {
   noDataText: locales.components.Autocomplete.noData,
-  hitSlop: {top: 6, right: 4, bottom: 6, left: 4},
+  hitSlop: { top: 6, right: 4, bottom: 6, left: 4 },
   disabled: false,
   data: [],
-  valueExtractor: ({value} = {}) => value,
+  valueExtractor: ({ value } = {}) => value,
   propsExtractor: () => null,
   dropdownOffset: {
     top: 50,
