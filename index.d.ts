@@ -4,6 +4,8 @@ import * as React from 'react';
 import { ViewStyle, TextStyle, StyleProp, KeyboardTypeOptions } from 'react-native';
 
 type AutocompleteProps = {
+    inputValue: string | undefined;
+    onChangeText: (search: string) => void;
     autoCorrect?: boolean;
     keyboardType?: KeyboardTypeOptions;
     highlightText?: boolean;
@@ -40,7 +42,6 @@ type AutocompleteProps = {
     handleSelectItem: (item: any, index: number) => void;
     onDropdownShow?: () => void;
     onDropdownClose?: () => void;
-    onChangeText?: (search: string) => void;
     renderIcon?: () => void;
     valueExtractor?: (item: any) => void;
     rightTextExtractor?: (item: any) => void;

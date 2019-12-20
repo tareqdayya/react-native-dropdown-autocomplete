@@ -13,7 +13,6 @@ class Autocomplete extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      inputValue: props.initialValue || "",
       loading: false,
       filteredItems: [],
     };
@@ -35,7 +34,6 @@ class Autocomplete extends Component {
       onChangeText(text);
     }
     clearTimeout(this.timer);
-    this.setState({inputValue: text});
     if (text.length > minimumCharactersCount) {
       this.setState(
         {
@@ -60,8 +58,8 @@ class Autocomplete extends Component {
   }
 
   async triggerChange() {
-    const {inputValue, items} = this.state;
-    const {fetchData, fetchDataUrl, valueExtractor} = this.props;
+    const { items} = this.state;
+    const {fetchData, fetchDataUrl, valueExtractor, inputValue} = this.props;
     if (fetchData) {
       try {
         const response = await fetchData(inputValue);
@@ -118,19 +116,19 @@ class Autocomplete extends Component {
   }
 
   setItem(value) {
-    const {index, handleSelectItem, valueExtractor, resetOnSelect} = this.props;
+    const {index, handleSelectItem, valueExtractor, resetOnSelect, onChangeText} = this.props;
     handleSelectItem(value, index);
 
     if (resetOnSelect) {
-      this.setState({inputValue: ""});
+      this.clearInput();
     } else {
       const capitalizedValue = capitalizeFirstLetter(valueExtractor(value));
-      this.setState({inputValue: capitalizedValue});
+      onChangeText(capitalizedValue);
     }
   }
 
   clearInput() {
-    this.setState({inputValue: ""});
+    this.props.onChangeText('');
   }
 
   componentDidMount() {
@@ -155,8 +153,10 @@ class Autocomplete extends Component {
   }
 
   render() {
-    const {inputValue, items, loading, filteredItems} = this.state;
+    const {items, loading, filteredItems} = this.state;
     const {
+      initialValue,
+      inputValue,
       placeholder,
       scrollToInput,
       renderIcon,
@@ -187,10 +187,11 @@ class Autocomplete extends Component {
             placeholder={placeholder}
             placeholderTextColor={placeholderColor || theme.textSecondary}
             disableFullscreenUI={disableFullscreenUI}
+            defaultValue={initialValue}
             value={inputValue}
             autoCorrect={autoCorrect}
             keyboardType={keyboardType}
-            onChangeText={text => this.handleInputChange(text)}
+            onChangeText={this.handleInputChange}
             onFocus={event => {
               if (scrollToInput) {
                 scrollToInput(findNodeHandle(event.target));
@@ -235,6 +236,8 @@ Autocomplete.defaultProps = {
 };
 
 Autocomplete.propTypes = {
+  inputValue: string,
+  onChangeText: func,
   placeholder: string,
   spinnerSize: string,
   listHeader: string,
