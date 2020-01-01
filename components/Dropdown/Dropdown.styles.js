@@ -1,5 +1,5 @@
-import {StyleSheet, Platform} from "react-native";
-import {theme} from "../../constants/Theme";
+import { StyleSheet } from "react-native";
+import { theme } from "../../constants/Theme";
 
 export default StyleSheet.create({
   accessory: {
@@ -16,6 +16,10 @@ export default StyleSheet.create({
     top: 67,
     left: '10%',
     zIndex: 100,
+    shadowRadius: 3,
+    shadowColor: theme.textSubtitle,
+    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 4 },
   },
   item: {
     textAlign: "left",
@@ -68,21 +72,10 @@ export default StyleSheet.create({
   },
   scroll: {
     flex: 1,
-    // borderRadius: 2,
+    zIndex: 200,
     backgroundColor: "rgba(255, 255, 255, 1.0)",
     borderRadius: 2,
-    ...Platform.select({
-      ios: {
-        shadowRadius: 2,
-        shadowColor: theme.textSubtitle,
-        shadowOpacity: 0.8,
-        shadowOffset: {width: 4, height: 6},
-      },
-
-      android: {
-        elevation: 6,
-      },
-    }),
+    elevation: 6,
     width: '100%',
     height: '100%',
   },

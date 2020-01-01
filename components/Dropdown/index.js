@@ -1,5 +1,5 @@
 import React, { PureComponent } from "react";
-import { Animated, Dimensions, FlatList, Platform, Text, View, ViewPropTypes } from "react-native";
+import { Animated, Dimensions, FlatList, Platform, Text, View, ViewPropTypes, StyleSheet } from "react-native";
 import PropTypes from "prop-types";
 import Ripple from "react-native-material-ripple";
 import DropdownItem from "../DropdownItem";
@@ -495,15 +495,16 @@ export default class Dropdown extends PureComponent {
 
     return (
       <View onLayout={this.onLayout}
-            style={[styles.containerView, containerStyle]}
+            style={StyleSheet.flatten([styles.containerView, containerStyle])}
             ref={view => {
               this.mainView = view;
-            }}>
+            }}
+      >
         <FlatList
           keyboardShouldPersistTaps="always"
           ref={this.updateScrollRef}
           data={itemData}
-          style={[styles.scroll, scrollStyle]}
+          style={StyleSheet.flatten([styles.scroll, scrollStyle])}
           renderItem={this.renderItem}
           keyExtractor={this.keyExtractor}
           scrollEnabled={visibleItemCount <= itemCount}

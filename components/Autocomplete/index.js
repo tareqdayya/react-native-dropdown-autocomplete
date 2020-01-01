@@ -1,5 +1,5 @@
 import React, {Component, Fragment} from "react";
-import {findNodeHandle, ActivityIndicator, TextInput, View, Keyboard} from "react-native";
+import {findNodeHandle, ActivityIndicator, TextInput, View, StyleSheet} from "react-native";
 import {string, bool, number, func} from "prop-types";
 import Dropdown from "../Dropdown";
 import {capitalizeFirstLetter} from "../../utils/string";
@@ -176,7 +176,7 @@ class Autocomplete extends Component {
 
     return (
       <Fragment>
-        <View style={[styles.inputContainerStyle, inputContainerStyle]}>
+        <View style={StyleSheet.flatten(styles.inputContainerStyle, inputContainerStyle)}>
           {renderIcon && renderIcon()}
           <TextInput
             ref={ref => {
