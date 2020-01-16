@@ -68,6 +68,7 @@ export const styles = StyleSheet.create({
     textDecorationLine: "none",
     paddingLeft: 40,
     height: 42,
+    textAlignVertical: 'center',
     maxWidth: "100%",
     borderWidth: 1,
     borderRadius: 6,

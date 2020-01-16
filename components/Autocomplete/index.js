@@ -201,6 +201,8 @@ class Autocomplete extends Component {
                 scrollToInput(findNodeHandle(event.target));
               }
             }}
+            numberOfLines={1}
+            ellipsizeMode="tail"
           />
 
           {loading && (

@@ -10,7 +10,8 @@ export default StyleSheet.create({
   },
   containerView: {
     position: "absolute",
-    width: 300,
+    maxWidth: 300,
+    width: '90%',
     minHeight: 40,
     maxHeight: 400,
     top: 67,
@@ -46,6 +47,10 @@ export default StyleSheet.create({
   listItemText: {
     justifyContent: "center",
     color: theme.listItem,
+    includeFontPadding: false,
+    flex: 0.8,
+    flexDirection: 'row',
+    flexWrap: 'wrap'
   },
   listHeaderText: {
     color: theme.textSubtitle,

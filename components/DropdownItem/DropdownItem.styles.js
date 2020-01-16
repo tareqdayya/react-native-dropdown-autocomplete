@@ -5,5 +5,7 @@ export default StyleSheet.create({
     paddingVertical: 0,
     borderRadius: 0,
     justifyContent: "center",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
 });

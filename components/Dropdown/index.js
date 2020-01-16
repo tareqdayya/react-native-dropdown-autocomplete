@@ -390,9 +390,8 @@ export default class Dropdown extends PureComponent {
     props.style = [
       props.style,
       {
-        height: this.itemSize(),
         paddingVertical: 12,
-        paddingLeft: 24,
+        paddingLeft: 6,
       },
       rightContent
         ? {
@@ -412,8 +411,7 @@ export default class Dropdown extends PureComponent {
             rightContent ? { maxWidth: 200 } : {},
             listItemTextStyle,
           ]}
-          numberOfLines={1}
-          ellipsizeMode="tail"
+          numberOfLines={2}
         >
           {text}
         </Text>
