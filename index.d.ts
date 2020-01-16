@@ -1,7 +1,7 @@
 // Type definitions for react-native-dropdown-autocomplete 1.0
 
 import * as React from 'react';
-import { ViewStyle, TextStyle, StyleProp, KeyboardTypeOptions } from 'react-native';
+import { ViewStyle, TextStyle, StyleProp, KeyboardTypeOptions, TextInput } from 'react-native';
 
 type AutocompleteProps = {
     inputValue: string | undefined;
@@ -46,6 +46,7 @@ type AutocompleteProps = {
     valueExtractor?: (item: any) => void;
     rightTextExtractor?: (item: any) => void;
     fetchData?: (search: string) => Promise<any[]>;
+    inputTextRef?: (el: React.RefObject<TextInput>) => void;
 }
 
 export class Autocomplete extends React.Component<AutocompleteProps, any> {

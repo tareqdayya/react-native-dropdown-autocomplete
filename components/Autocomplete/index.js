@@ -1,12 +1,12 @@
-import React, {Component, Fragment} from "react";
-import {findNodeHandle, ActivityIndicator, TextInput, View, StyleSheet} from "react-native";
-import {string, bool, number, func} from "prop-types";
+import React, { Component, Fragment } from "react";
+import { ActivityIndicator, findNodeHandle, StyleSheet, TextInput, View } from "react-native";
+import { bool, func, number, string } from "prop-types";
 import Dropdown from "../Dropdown";
-import {capitalizeFirstLetter} from "../../utils/string";
-import {styles} from "./Autocomplete.styles";
-import {get} from "../../utils/api";
-import {WAIT_INTERVAL, NO_DATA} from "../../constants/Autocomplete";
-import {theme} from "../../constants/Theme";
+import { capitalizeFirstLetter } from "../../utils/string";
+import { styles } from "./Autocomplete.styles";
+import { get } from "../../utils/api";
+import { NO_DATA, WAIT_INTERVAL } from "../../constants/Autocomplete";
+import { theme } from "../../constants/Theme";
 import locales from "../../constants/Locales";
 
 class Autocomplete extends Component {
@@ -29,7 +29,7 @@ class Autocomplete extends Component {
   }
 
   handleInputChange(text) {
-    const {onChangeText, minimumCharactersCount, waitInterval} = this.props;
+    const { onChangeText, minimumCharactersCount, waitInterval } = this.props;
     if (onChangeText) {
       onChangeText(text);
     }
@@ -46,7 +46,7 @@ class Autocomplete extends Component {
         },
       );
     } else {
-      this.setState({loading: false});
+      this.setState({ loading: false });
     }
   }
 
@@ -58,42 +58,44 @@ class Autocomplete extends Component {
   }
 
   async triggerChange() {
-    const { items} = this.state;
-    const {fetchData, fetchDataUrl, valueExtractor, inputValue} = this.props;
+    const { items } = this.state;
+    const { fetchData, fetchDataUrl, valueExtractor, inputValue } = this.props;
     if (fetchData) {
       try {
         const response = await fetchData(inputValue);
         if (response.length && this.mounted) {
-          this.setState({items: response, loading: false});
+          this.setState({ items: response, loading: false });
         } else {
-          this.setState({items: [NO_DATA], loading: false});
+          this.setState({ items: [NO_DATA], loading: false });
         }
         if (this.dropdown.current) {
           this.dropdown.current.onPress(this.container);
         }
-      } catch (error) {
+      }
+      catch (error) {
         throw new Error(error);
       }
     } else if (fetchDataUrl) {
       try {
-        const response = await get(fetchDataUrl, {search: inputValue});
+        const response = await get(fetchDataUrl, { search: inputValue });
         if (response.length && this.mounted) {
-          this.setState({items: response, loading: false});
+          this.setState({ items: response, loading: false });
         } else {
-          this.setState({items: [NO_DATA], loading: false});
+          this.setState({ items: [NO_DATA], loading: false });
         }
         if (this.dropdown.current) {
           this.dropdown.current.onPress(this.container);
         }
-      } catch (error) {
+      }
+      catch (error) {
         throw new Error(error);
       }
     } else {
       const filteredItems = items.filter(item => {
         return (
           valueExtractor(item)
-            .toLowerCase()
-            .search(inputValue.toLowerCase()) !== -1
+          .toLowerCase()
+          .search(inputValue.toLowerCase()) !== -1
         );
       });
 
@@ -116,7 +118,7 @@ class Autocomplete extends Component {
   }
 
   setItem(value) {
-    const {index, handleSelectItem, valueExtractor, resetOnSelect, onChangeText} = this.props;
+    const { index, handleSelectItem, valueExtractor, resetOnSelect, onChangeText } = this.props;
     handleSelectItem(value, index);
 
     if (resetOnSelect) {
@@ -132,10 +134,10 @@ class Autocomplete extends Component {
   }
 
   componentDidMount() {
-    const {data} = this.props;
+    const { data } = this.props;
     this.mounted = true;
     if (data) {
-      this.setState({items: data});
+      this.setState({ items: data });
     }
   }
 
@@ -146,14 +148,14 @@ class Autocomplete extends Component {
 
   handleBlur() {
     clearTimeout(this.timer);
-    this.setState({loading: false});
+    this.setState({ loading: false });
     if (this.dropdown.current) {
       this.dropdown.current.close();
     }
   }
 
   render() {
-    const {items, loading, filteredItems} = this.state;
+    const { items, loading, filteredItems } = this.state;
     const {
       initialValue,
       inputValue,
@@ -171,6 +173,7 @@ class Autocomplete extends Component {
       placeholderColor,
       data,
       disableFullscreenUI,
+      inputTextRef,
       ...dropdownProps
     } = this.props;
 
@@ -180,6 +183,7 @@ class Autocomplete extends Component {
           {renderIcon && renderIcon()}
           <TextInput
             ref={ref => {
+              if (inputTextRef) inputTextRef(ref);
               this.container = ref;
             }}
             onBlur={event => this.handleBlur(event)}
@@ -259,6 +263,7 @@ Autocomplete.propTypes = {
   onDropdownShow: func,
   rightTextExtractor: func,
   fetchData: func,
+  inputTextRef: func
 };
 
 export default Autocomplete;
