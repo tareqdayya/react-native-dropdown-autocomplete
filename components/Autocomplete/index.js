@@ -1,7 +1,7 @@
 import React, { Component, Fragment } from "react";
 import { ActivityIndicator, findNodeHandle, StyleSheet, TextInput, View } from "react-native";
 import { bool, func, number, string } from "prop-types";
-import Dropdown from "../Dropdown";
+import Dropdown from "./../Dropdown";
 import { capitalizeFirstLetter } from "../../utils/string";
 import { styles } from "./Autocomplete.styles";
 import { get } from "../../utils/api";
@@ -214,17 +214,18 @@ class Autocomplete extends Component {
           )}
         </View>
 
-        {items && items.length > 0 && (
-          <Dropdown
-            ref={this.dropdown}
-            dropdownPosition={0}
-            data={data ? filteredItems : items}
-            listHeader={listHeader}
-            inputValue={inputValue}
-            onChangeValue={this.setItem}
-            {...dropdownProps}
-          />
-        )}
+        <Dropdown
+          data={data ? filteredItems : items}
+          listHeader={listHeader}
+          inputValue={inputValue}
+          onChangeValue={this.setItem}
+          useNativeDriver
+          dropdownOffset={{
+            top: 16,
+            left: 0,
+          }}
+          {...dropdownProps}
+        />
       </Fragment>
     );
   }

@@ -1,39 +1,191 @@
-import React, { PureComponent } from "react";
-import { Animated, Dimensions, FlatList, Platform, Text, View, ViewPropTypes, StyleSheet } from "react-native";
-import PropTypes from "prop-types";
-import Ripple from "react-native-material-ripple";
-import DropdownItem from "../DropdownItem";
-import styles from "./Dropdown.styles";
-import { capitalizeFirstLetter, highlightString } from "../../utils/string";
-import { NO_DATA } from "../../constants/Autocomplete";
-import { theme } from "../../constants/Theme";
-import locales from "../../constants/Locales";
+import PropTypes from 'prop-types';
+import React, { PureComponent } from 'react';
+import {
+  Animated,
+  Dimensions,
+  FlatList,
+  I18nManager,
+  Modal,
+  Platform,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+  ViewPropTypes,
+  Keyboard,
+  ScrollView,
+} from 'react-native';
+import Ripple from 'react-native-material-ripple';
+import DropdownItem from '../DropdownItem';
+import styles from './Dropdown.styles';
+import { NO_DATA } from 'react-native-dropdown-autocomplete/constants/Autocomplete';
+import {
+  capitalizeFirstLetter,
+  highlightString
+} from 'react-native-dropdown-autocomplete/utils/string';
+import { theme } from 'react-native-dropdown-autocomplete/constants/Theme';
+
+const AnimatedTouchableWithoutFeedback = Animated.createAnimatedComponent(TouchableWithoutFeedback);
 
 export default class Dropdown extends PureComponent {
-  mainView;
-  inputOffsetToPage;
+  static defaultProps = {
+    hitSlop: { top: 6, right: 4, bottom: 6, left: 4 },
+
+    disabled: false,
+
+    data: [],
+
+    valueExtractor: ({ value } = {}, index) => value,
+    labelExtractor: ({ label } = {}, index) => label,
+    propsExtractor: () => null,
+
+    absoluteRTLLayout: false,
+
+    dropdownOffset: {
+      top: 32,
+      left: 0,
+    },
+
+    dropdownMargins: {
+      min: 8,
+      max: 16,
+    },
+
+    rippleCentered: false,
+    rippleSequential: true,
+
+    rippleInsets: {
+      top: 16,
+      right: 0,
+      bottom: -8,
+      left: 0,
+    },
+
+    rippleOpacity: 0.54,
+    shadeOpacity: 0.12,
+
+    rippleDuration: 0,
+    animationDuration: 0,
+
+    fontSize: 16,
+
+    textColor: 'rgba(0, 0, 0, .87)',
+    itemColor: 'rgba(0, 0, 0, .54)',
+    baseColor: 'rgba(0, 0, 0, .38)',
+
+    itemCount: 4,
+    itemPadding: 8,
+
+    supportedOrientations: [
+      'portrait',
+      'portrait-upside-down',
+      'landscape',
+      'landscape-left',
+      'landscape-right',
+    ],
+
+    useNativeDriver: false,
+  };
+
+  static propTypes = {
+    ...TouchableOpacity.propTypes,
+
+    disabled: PropTypes.bool,
+
+    value: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.number,
+    ]),
+
+    data: PropTypes.arrayOf(PropTypes.object),
+
+    valueExtractor: PropTypes.func,
+    labelExtractor: PropTypes.func,
+    propsExtractor: PropTypes.func,
+
+    absoluteRTLLayout: PropTypes.bool,
+
+    dropdownOffset: PropTypes.shape({
+      top: PropTypes.number.isRequired,
+      left: PropTypes.number.isRequired,
+    }),
+
+    dropdownMargins: PropTypes.shape({
+      min: PropTypes.number.isRequired,
+      max: PropTypes.number.isRequired,
+    }),
+
+    dropdownPosition: PropTypes.number,
+
+    rippleColor: PropTypes.string,
+    rippleCentered: PropTypes.bool,
+    rippleSequential: PropTypes.bool,
+
+    rippleInsets: PropTypes.shape({
+      top: PropTypes.number,
+      right: PropTypes.number,
+      bottom: PropTypes.number,
+      left: PropTypes.number,
+    }),
+
+    rippleOpacity: PropTypes.number,
+    shadeOpacity: PropTypes.number,
+
+    rippleDuration: PropTypes.number,
+    animationDuration: PropTypes.number,
+
+    fontSize: PropTypes.number,
+
+    textColor: PropTypes.string,
+    itemColor: PropTypes.string,
+    selectedItemColor: PropTypes.string,
+    disabledItemColor: PropTypes.string,
+    baseColor: PropTypes.string,
+
+    itemTextStyle: Text.propTypes.style,
+
+    itemCount: PropTypes.number,
+    itemPadding: PropTypes.number,
+
+    onLayout: PropTypes.func,
+    onFocus: PropTypes.func,
+    onBlur: PropTypes.func,
+    onChangeText: PropTypes.func,
+
+    renderBase: PropTypes.func,
+    renderAccessory: PropTypes.func,
+
+    containerStyle: (ViewPropTypes || View.propTypes).style,
+    overlayStyle: (ViewPropTypes || View.propTypes).style,
+    pickerStyle: (ViewPropTypes || View.propTypes).style,
+
+    supportedOrientations: PropTypes.arrayOf(PropTypes.string),
+
+    useNativeDriver: PropTypes.bool,
+  };
 
   constructor(props) {
     super(props);
 
-    this.onPress = this.onPress.bind(this);
+    this.openModal = this.openModal.bind(this);
     this.onClose = this.onClose.bind(this);
     this.onSelect = this.onSelect.bind(this);
     this.onLayout = this.onLayout.bind(this);
-    this.renderSeparator = this.renderSeparator.bind(this);
-    this.renderFooter = this.renderFooter.bind(this);
 
-    this.updateRippleRef = this.updateRef.bind(this, "ripple");
-    this.updateScrollRef = this.updateRef.bind(this, "scroll");
+    this.updateRippleRef = this.updateRef.bind(this, 'ripple');
+    this.updateContainerRef = this.updateRef.bind(this, 'container');
+    this.updateScrollRef = this.updateRef.bind(this, 'scroll');
 
+    this.renderAccessory = this.renderAccessory.bind(this);
+    this.renderEmptyItem = this.renderEmptyItem.bind(this);
     this.renderItem = this.renderItem.bind(this);
 
     this.keyExtractor = this.keyExtractor.bind(this);
 
     this.blur = () => this.onClose();
-    this.focus = this.onPress;
+    this.focus = this.openModal;
 
-    const { value } = this.props;
+    let { value } = this.props;
 
     this.mounted = false;
     this.focused = false;
@@ -44,14 +196,11 @@ export default class Dropdown extends PureComponent {
       modal: false,
       value,
     };
-
-    this.renderHeader = this.renderHeader.bind(this);
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { value } = this.props;
-    if (nextProps.value !== value) {
-      this.setState({ value: nextProps.value });
+  componentWillReceiveProps({ value }) {
+    if (value !== this.props.value) {
+      this.setState({ value });
     }
   }
 
@@ -59,12 +208,18 @@ export default class Dropdown extends PureComponent {
     this.mounted = true;
   }
 
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    const { data } = this.props;
+
+    if (data && data !== prevProps.data && data.length) this.openModal();
+  }
+
   componentWillUnmount() {
     this.mounted = false;
   }
 
-  onPress(container) {
-    const {
+  openModal(event) {
+    let {
       data,
       disabled,
       onFocus,
@@ -73,163 +228,205 @@ export default class Dropdown extends PureComponent {
       dropdownOffset,
       dropdownMargins: { min: minMargin, max: maxMargin },
       animationDuration,
-      onDropdownShow,
+      absoluteRTLLayout,
       useNativeDriver,
+      onDropdownShow,
     } = this.props;
 
     if (disabled) {
       return;
     }
-    const itemCount = data.length;
-    const timestamp = Date.now();
+
+    let itemCount = data.length;
+    let timestamp = Date.now();
+
+    if (null != event) {
+      /* Adjust event location */
+      event.nativeEvent.locationY -= this.rippleInsets().top;
+      event.nativeEvent.locationX -= this.rippleInsets().left;
+
+      /* Start ripple directly from event */
+      this.ripple.startRipple(event);
+    }
+
     if (!itemCount) {
       return;
     }
+
     this.focused = true;
-    if (typeof onFocus === "function") {
+
+    if ('function' === typeof onFocus) {
       onFocus();
     }
-    const dimensions = Dimensions.get("window");
-    container.measureInWindow((x, y, containerWidth) => {
-      const { opacity } = this.state;
-      const delay = Math.max(
-        0,
-        rippleDuration - animationDuration - (Date.now() - timestamp),
-      );
-      const selected = this.selectedIndex();
 
-      let leftInset;
-      let left = x + dropdownOffset.left - maxMargin;
+    let dimensions = Dimensions.get('window');
 
-      if (left > minMargin) {
-        leftInset = maxMargin;
-      } else {
-        left = minMargin;
-        leftInset = minMargin;
-      }
+    // dismiss keyboard THEN show modal (we're going to measure where input is and show modal below
+    // it so users can always see what they typed in)
+    Keyboard.dismiss();
 
-      let right = x + containerWidth + maxMargin;
-      let rightInset;
+    // setTimeout so keyboard has enough time to dismiss
+    setTimeout(() => {
+        this.container.measureInWindow((x, y, containerWidth, containerHeight) => {
+          let { opacity } = this.state;
 
-      if (dimensions.width - right > minMargin) {
-        rightInset = maxMargin;
-      } else {
-        right = dimensions.width - minMargin;
-        rightInset = minMargin;
-      }
+          /* Adjust coordinates for relative layout in RTL locale */
+          if (I18nManager.isRTL && !absoluteRTLLayout) {
+            x = dimensions.width - (x + containerWidth);
+          }
 
-      const top = y + dropdownOffset.top - itemPadding;
+          let delay = Math.max(0, rippleDuration - animationDuration - (Date.now() - timestamp));
+          let selected = this.selectedIndex();
 
-      this.setState({
-        modal: true,
-        width: right - left,
-        top,
-        left,
-        leftInset,
-        rightInset,
-        selected,
-      });
+          let leftInset;
+          let left = x
+            + dropdownOffset.left
+            - maxMargin;
 
-      setTimeout(() => {
-        if (this.mounted) {
-          this.resetScrollOffset();
+          if (left > minMargin) {
+            leftInset = maxMargin;
+          } else {
+            left = minMargin;
+            leftInset = minMargin;
+          }
 
-          Animated.timing(opacity, {
-            duration: animationDuration,
-            toValue: 1,
-            useNativeDriver,
-          }).start(() => {
-            if (this.mounted && Platform.OS === "ios") {
-              const { flashScrollIndicators } = this.scroll || {};
+          let right = x + containerWidth + maxMargin;
+          let rightInset;
 
-              if (typeof flashScrollIndicators === "function") {
-                flashScrollIndicators.call(this.scroll);
-              }
-              if (typeof onDropdownShow === "function") {
-                onDropdownShow();
-              }
-            }
+          if (dimensions.width - right > minMargin) {
+            rightInset = maxMargin;
+          } else {
+            right = dimensions.width - minMargin;
+            rightInset = minMargin;
+          }
+
+          let top = y
+            + dropdownOffset.top
+            - itemPadding;
+
+          this.setState({
+            modal: true,
+            width: right - left,
+            top,
+            left,
+            leftInset,
+            rightInset,
+            selected,
           });
-        }
-      }, delay);
+
+          setTimeout((() => {
+            if (this.mounted) {
+              this.resetScrollOffset();
+
+              Animated
+              .timing(opacity, {
+                duration: animationDuration,
+                toValue: 1,
+                useNativeDriver,
+              })
+              .start(() => {
+                if (this.mounted && 'ios' === Platform.OS) {
+                  let { flashScrollIndicators } = this.scroll || {};
+
+                  if ('function' === typeof flashScrollIndicators) {
+                    flashScrollIndicators.call(this.scroll);
+                  }
+
+                  if (typeof onDropdownShow === "function") {
+                    onDropdownShow();
+                  }
+                }
+              });
+            }
+          }), delay);
+        });
+    }, 150);
+  }
+
+  onClose(value = this.state.value) {
+    let { onBlur, animationDuration, useNativeDriver } = this.props;
+    let { opacity } = this.state;
+
+    Animated
+    .timing(opacity, {
+      duration: animationDuration,
+      toValue: 0,
+      useNativeDriver,
+    })
+    .start(() => {
+      this.focused = false;
+
+      if ('function' === typeof onBlur) {
+        onBlur();
+      }
+
+      if (this.mounted) {
+        this.setState({ value, modal: false });
+      }
     });
   }
 
-  close() {
-    const { onBlur, onDropdownClose } = this.props;
-
-    if (typeof onBlur === "function") {
-      onBlur();
-    }
-    if (typeof onDropdownClose === "function") {
-      onDropdownClose();
-    }
-    if (this.mounted) {
-      this.setState({ modal: false });
-    }
-  }
-
-  onClose(val) {
-    const { onBlur, onDropdownClose } = this.props;
-    const { value } = this.state;
-    const finalValue = val || value;
-
-    if (typeof onBlur === "function") {
-      onBlur();
-    }
-    if (typeof onDropdownClose === "function") {
-      onDropdownClose();
-    }
-    if (this.mounted) {
-      this.setState({ value: finalValue, modal: false });
-    }
-  }
-
   onSelect(index) {
-    const { data, onChangeValue, animationDuration, rippleDuration } = this.props;
+    let {
+      data,
+      valueExtractor,
+      onChangeText,
+      animationDuration,
+      rippleDuration,
+    } = this.props;
 
-    const value = data[index];
+    let value = valueExtractor(data[index], index);
+    let delay = Math.max(0, rippleDuration - animationDuration);
 
-    const delay = Math.max(0, rippleDuration - animationDuration);
-
-    if (typeof onChangeValue === "function") {
-      onChangeValue(value);
+    if ('function' === typeof onChangeText) {
+      onChangeText(value, index, data);
     }
 
     setTimeout(() => this.onClose(value), delay);
   }
 
   onLayout(event) {
-    const { onLayout } = this.props;
+    let { onLayout } = this.props;
 
-    if (typeof onLayout === "function") {
+    if ('function' === typeof onLayout) {
       onLayout(event);
     }
   }
 
   value() {
-    const { value } = this.state;
+    let { value } = this.state;
 
     return value;
   }
 
   selectedIndex() {
-    const { data } = this.props;
+    let { value } = this.state;
+    let { data, valueExtractor } = this.props;
 
-    return data.findIndex(item => item != null);
+    return data
+    .findIndex((item, index) => null != item);
+  }
+
+  selectedItem() {
+    let { data } = this.props;
+
+    return data[this.selectedIndex()];
+  }
+
+  isFocused() {
+    return this.focused;
   }
 
   itemSize() {
-    const { fontSize, itemPadding } = this.props;
+    let { fontSize, itemPadding } = this.props;
 
     return Math.ceil(fontSize * 1.5 + itemPadding * 2);
   }
 
   visibleItemCount() {
-    const { data, itemCount, listHeader } = this.props;
-    const properLength = listHeader ? data.length + 1 : data.length;
+    let { data, itemCount } = this.props;
 
-    return Math.min(properLength, itemCount);
+    return Math.min(data.length, itemCount);
   }
 
   tailItemCount() {
@@ -237,29 +434,36 @@ export default class Dropdown extends PureComponent {
   }
 
   rippleInsets() {
-    const { rippleInsets } = this.props;
-    const { top = 16, right = 0, bottom = -8, left = 0 } = rippleInsets || {};
+    let {
+      top = 16,
+      right = 0,
+      bottom = -8,
+      left = 0,
+    } = this.props.rippleInsets || {};
 
     return { top, right, bottom, left };
   }
 
   resetScrollOffset() {
-    const { selected } = this.state;
-    const { data, dropdownPosition } = this.props;
+    let { selected } = this.state;
+    let { data, dropdownPosition } = this.props;
 
     let offset = 0;
-    const itemCount = data.length;
-    const itemSize = this.itemSize();
-    const tailItemCount = this.tailItemCount();
-    const visibleItemCount = this.visibleItemCount();
+    let itemCount = data.length;
+    let itemSize = this.itemSize();
+    let tailItemCount = this.tailItemCount();
+    let visibleItemCount = this.visibleItemCount();
+
     if (itemCount > visibleItemCount) {
-      if (dropdownPosition == null) {
+      if (null == dropdownPosition) {
         switch (selected) {
           case -1:
             break;
+
           case 0:
           case 1:
             break;
+
           default:
             if (selected >= itemCount - tailItemCount) {
               offset = itemSize * (itemCount - visibleItemCount);
@@ -273,9 +477,11 @@ export default class Dropdown extends PureComponent {
         if (dropdownPosition < 0) {
           index -= visibleItemCount;
         }
+
         index = Math.max(0, index);
         index = Math.min(index, itemCount - visibleItemCount);
-        if (selected >= 0) {
+
+        if (~selected) {
           offset = itemSize * index;
         }
       }
@@ -291,13 +497,55 @@ export default class Dropdown extends PureComponent {
   }
 
   keyExtractor(item, index) {
-    const { valueExtractor } = this.props;
+    let { valueExtractor } = this.props;
 
     return `${index}-${valueExtractor(item, index)}`;
   }
 
+  renderBase(props) {
+    let { value } = this.state;
+    let {
+      data,
+      renderBase,
+      labelExtractor,
+      dropdownOffset,
+      renderAccessory = this.renderAccessory,
+    } = this.props;
+
+    let index = this.selectedIndex();
+    let title;
+
+    if (~index) {
+      title = labelExtractor(data[index], index);
+    }
+
+    if (null == title) {
+      title = value;
+    }
+
+    if ('function' === typeof renderBase) {
+      return renderBase({ ...props, title, value, renderAccessory });
+    }
+
+    title = null == title || 'string' === typeof title ?
+      title :
+      String(title);
+
+    /*return (
+      <TextField
+        label=''
+        labelHeight={dropdownOffset.top - Platform.select({ ios: 1, android: 2 })}
+        {...props}
+        value={title}
+        editable={false}
+        onChangeText={undefined}
+        renderAccessory={renderAccessory}
+      />
+    );*/
+  }
+
   renderRipple() {
-    const {
+    let {
       baseColor,
       rippleColor = baseColor,
       rippleOpacity,
@@ -306,12 +554,12 @@ export default class Dropdown extends PureComponent {
       rippleSequential,
     } = this.props;
 
-    const { bottom, ...insets } = this.rippleInsets();
-    const style = {
+    let { bottom, ...insets } = this.rippleInsets();
+    let style = {
       ...insets,
 
       height: this.itemSize() - bottom,
-      position: "absolute",
+      position: 'absolute',
     };
 
     return (
@@ -327,19 +575,161 @@ export default class Dropdown extends PureComponent {
     );
   }
 
+  renderAccessory() {
+    let { baseColor: backgroundColor } = this.props;
+    let triangleStyle = { backgroundColor };
+
+    return (
+      <View style={styles.accessory}>
+        <View style={styles.triangleContainer}>
+          <View style={[styles.triangle, triangleStyle]} />
+        </View>
+      </View>
+    );
+  }
+
   renderEmptyItem() {
     const { noDataText, noDataTextStyle } = this.props;
 
     return (
-      <DropdownItem index={0}>
-        <Text style={[styles.listItemText, styles.noData, noDataTextStyle]}>
-          {noDataText}
-        </Text>
-      </DropdownItem>
+      <Text style={[styles.listItemText, styles.noData, noDataTextStyle]}>
+        {noDataText}
+      </Text>
     );
   }
 
   renderItem({ item, index }) {
+    /*let { selected, leftInset, rightInset } = this.state;
+
+    let {
+      highlightText,
+      valueExtractor,
+      labelExtractor,
+      propsExtractor,
+      textColor,
+      itemColor,
+      baseColor,
+      selectedItemColor = textColor,
+      disabledItemColor = baseColor,
+      fontSize,
+      itemTextStyle,
+      rippleOpacity,
+      rippleDuration,
+      shadeOpacity,
+      rightTextExtractor,
+      rightContent,
+      rightContentStyle,
+      rightContentItemStyle,
+      listItemTextStyle,
+      inputValue,
+      highLightColor,
+    } = this.props;
+    if (null == item) {
+      return null;
+    }
+    if (item === NO_DATA) {
+      return this.renderEmptyItem();
+    }
+    let text;
+    if (highlightText) {
+      text = highlightString(
+        String(valueExtractor(item)),
+        inputValue,
+        highLightColor || theme.primary,
+      );
+    } else {
+      text = capitalizeFirstLetter(String(valueExtractor(item)));
+    }
+
+    let props = !propsExtractor(item, index) && {
+      rippleDuration,
+      rippleOpacity,
+      rippleColor: baseColor,
+      shadeColor: baseColor,
+      shadeOpacity,
+      ...this.props,
+      onPress: this.onSelect,
+    };
+    props.style = [
+      props.style,
+      {
+        paddingVertical: 12,
+        paddingLeft: 6,
+      },
+      rightContent
+        ? {
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }
+        : {},
+    ];
+
+    let { style, disabled }
+      = props
+      = {
+      rippleDuration,
+      rippleOpacity,
+      rippleColor: baseColor,
+
+      shadeColor: baseColor,
+      shadeOpacity,
+
+      ...props,
+
+      onPress: this.onSelect,
+    };
+
+    // let label = labelExtractor(item, index);
+
+    /!*let color = disabled ?
+      disabledItemColor :
+      ~selected ?
+        index === selected ?
+          selectedItemColor :
+          itemColor :
+        selectedItemColor;*!/
+
+    // let textStyle = { color, fontSize };
+
+    // props.style = [
+    //   style,
+    //   {
+    //     height: this.itemSize(),
+    //     paddingLeft: leftInset,
+    //     paddingRight: rightInset,
+    //   },
+    // ];
+
+    let value = valueExtractor(item, index);
+    const testID = (this.props.testID || 'dropdown') + '-' + value;
+
+    return (
+      <DropdownItem index={index} {...props} testID={testID}>
+        <Text
+          style={[
+            styles.listItemText,
+            rightContent ? { maxWidth: 200 } : {},
+            listItemTextStyle,
+          ]}
+          numberOfLines={2}>
+          {text}
+        </Text>
+
+        {rightContent && (
+          <View style={[styles.rightContent, rightContentStyle]}>
+            <Text
+              key={item.id}
+              style={[styles.rightContentItem, rightContentItemStyle]}
+            >
+              {rightTextExtractor(item)}
+            </Text>
+          </View>
+        )}
+      </DropdownItem>
+
+    );*/
     const {
       highlightText,
       inputValue,
@@ -389,10 +779,6 @@ export default class Dropdown extends PureComponent {
 
     props.style = [
       props.style,
-      {
-        paddingVertical: 12,
-        paddingLeft: 6,
-      },
       rightContent
         ? {
           display: "flex",
@@ -430,212 +816,119 @@ export default class Dropdown extends PureComponent {
     );
   }
 
-  renderSeparator() {
-    const { separatorStyle } = this.props;
-
-    return <View style={[styles.separator, separatorStyle]}/>;
-  }
-
-  renderFooter() {
-    const { listFooterStyle } = this.props;
-
-    return (
-      // <View style={[styles.listItem, styles.listFooter, listFooterStyle]} />
-      null
-    );
-  }
-
-  renderHeader() {
-    const { listHeader, listHeaderStyle, listHeaderTextStyle } = this.props;
-
-    return listHeader ? (
-      <View style={[styles.listItem, styles.listHeader, listHeaderStyle]}>
-        <Text
-          style={[styles.listHeaderText, listHeaderTextStyle]}
-          key={listHeader}
-        >
-          {listHeader.toUpperCase()}
-        </Text>
-      </View>
-    ) : null;
-  }
-
   render() {
-    const {
-      containerStyle,
-      scrollStyle,
+    let {
+      renderBase,
+      renderAccessory,
       overlayStyle: overlayStyleOverrides,
       pickerStyle: pickerStyleOverrides,
+
+      rippleInsets,
+      rippleOpacity,
+      rippleCentered,
+      rippleSequential,
+
+      hitSlop,
+      pressRetentionOffset,
+      testID,
+      nativeID,
+      accessible,
+      accessibilityLabel,
+
       supportedOrientations,
+
       ...props
     } = this.props;
 
-    const { data, itemPadding } = props;
+    let {
+      data,
+      disabled,
+      itemPadding,
+      dropdownPosition,
+      ref,
+    } = props;
 
-    const { left, top, width, modal } = this.state;
+    let { left, top, width, opacity, selected, modal } = this.state;
 
-    const itemCount = data.length;
-    const visibleItemCount = this.visibleItemCount();
-    const itemSize = this.itemSize();
-    const height = 2 * itemPadding + itemSize * visibleItemCount;
-    const translateY = -itemPadding;
+    let itemCount = data.length;
+    let visibleItemCount = this.visibleItemCount();
+    let tailItemCount = this.tailItemCount();
+    let itemSize = this.itemSize();
 
-    const pickerStyle = {
+    let height = 2 * itemPadding + itemSize * visibleItemCount;
+    let translateY = -itemPadding;
+
+    if (null == dropdownPosition) {
+      switch (selected) {
+        case -1:
+          translateY -= 1 === itemCount ? 0 : itemSize;
+          break;
+
+        case 0:
+          break;
+
+        default:
+          if (selected >= itemCount - tailItemCount) {
+            translateY -= itemSize * (visibleItemCount - (itemCount - selected));
+          } else {
+            translateY -= itemSize;
+          }
+      }
+    } else {
+      if (dropdownPosition < 0) {
+        translateY -= itemSize * (visibleItemCount + dropdownPosition);
+      } else {
+        translateY -= itemSize * dropdownPosition;
+      }
+    }
+
+    let overlayStyle = { opacity };
+
+    let pickerStyle = {
       width,
       height,
+      top,
       left,
-      transform: [{translateY}],
+      transform: [{ translateY }],
     };
 
-    const itemData = itemCount ? data : [NO_DATA];
-
-    if (!modal) return null;
-
     return (
-      <View onLayout={this.onLayout}
-            style={StyleSheet.flatten([styles.containerView, containerStyle])}
-            ref={view => {
-              this.mainView = view;
-            }}
-      >
-        <FlatList
-          keyboardShouldPersistTaps="always"
-          ref={this.updateScrollRef}
-          data={itemData}
-          style={StyleSheet.flatten([styles.scroll, scrollStyle])}
-          renderItem={this.renderItem}
-          keyExtractor={this.keyExtractor}
-          scrollEnabled={visibleItemCount <= itemCount}
-          ItemSeparatorComponent={this.renderSeparator}
-          // ListFooterComponent={this.renderFooter}
-          ListHeaderComponent={this.renderHeader}
-          nestedScrollEnabled
-        />
+      /** create this container with 0 height and then use its ref.measureInWindow() to find out
+       * where it is and use that to control the absolute positioning of the dropdown */
+      <View onLayout={this.onLayout} ref={this.updateContainerRef} style={{ height: 0 }}>
+        {/** modal is not affected by parent having height of 0 */}
+        <Modal
+          visible={modal}
+          transparent={true}
+          onRequestClose={this.blur}
+          supportedOrientations={supportedOrientations}
+        >
+          {/** animate the opacity as modal (dis)appears */}
+          <Animated.View
+            style={[styles.overlay, overlayStyle, overlayStyleOverrides]}
+            onStartShouldSetResponder={() => true}
+            onResponderRelease={this.blur}
+          >
+            <View
+              style={[styles.picker, pickerStyle, pickerStyleOverrides]}
+              onStartShouldSetResponder={() => true}
+              pointer-events="box-none"
+            >
+              <FlatList
+                ref={this.updateScrollRef}
+                data={data}
+                style={styles.scroll}
+                renderItem={this.renderItem}
+                keyExtractor={this.keyExtractor}
+                scrollEnabled
+                contentContainerStyle={styles.scrollContainer}
+                nestedScrollEnabled
+              />
+            </View>
+          </Animated.View>
+        </Modal>
       </View>
     );
   }
 }
 
-Dropdown.propTypes = {
-  noDataText: PropTypes.string,
-  hitSlop: PropTypes.object,
-  onChangeValue: PropTypes.func,
-  inputValue: PropTypes.string,
-  listHeader: PropTypes.string,
-  disabled: PropTypes.bool,
-
-  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-
-  data: PropTypes.arrayOf(
-    PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
-  ),
-
-  valueExtractor: PropTypes.func,
-  labelExtractor: PropTypes.func,
-  propsExtractor: PropTypes.func,
-
-  absoluteRTLLayout: PropTypes.bool,
-
-  dropdownOffset: PropTypes.shape({
-    top: PropTypes.number.isRequired,
-    left: PropTypes.number.isRequired,
-  }),
-
-  dropdownMargins: PropTypes.shape({
-    min: PropTypes.number.isRequired,
-    max: PropTypes.number.isRequired,
-  }),
-
-  dropdownPosition: PropTypes.number,
-
-  rippleColor: PropTypes.string,
-  rippleCentered: PropTypes.bool,
-  rippleSequential: PropTypes.bool,
-
-  rippleInsets: PropTypes.shape({
-    top: PropTypes.number,
-    right: PropTypes.number,
-    bottom: PropTypes.number,
-    left: PropTypes.number,
-  }),
-
-  rippleOpacity: PropTypes.number,
-  shadeOpacity: PropTypes.number,
-
-  rippleDuration: PropTypes.number,
-  animationDuration: PropTypes.number,
-
-  fontSize: PropTypes.number,
-
-  textColor: PropTypes.string,
-  itemColor: PropTypes.string,
-  selectedItemColor: PropTypes.string,
-  disabledItemColor: PropTypes.string,
-  baseColor: PropTypes.string,
-
-  itemTextStyle: Text.propTypes.style,
-  separatorStyle: (ViewPropTypes || View.propTypes).style,
-  listFooterStyle: (ViewPropTypes || View.propTypes).style,
-  listHeaderStyle: (ViewPropTypes || View.propTypes).style,
-  itemCount: PropTypes.number,
-  itemPadding: PropTypes.number,
-
-  onLayout: PropTypes.func,
-  onFocus: PropTypes.func,
-  onBlur: PropTypes.func,
-  onChangeText: PropTypes.func,
-
-  renderBase: PropTypes.func,
-  renderAccessory: PropTypes.func,
-
-  containerStyle: (ViewPropTypes || View.propTypes).style,
-  overlayStyle: (ViewPropTypes || View.propTypes).style,
-  pickerStyle: (ViewPropTypes || View.propTypes).style,
-
-  supportedOrientations: PropTypes.arrayOf(PropTypes.string),
-
-  useNativeDriver: PropTypes.bool,
-};
-
-Dropdown.defaultProps = {
-  noDataText: locales.components.Autocomplete.noData,
-  hitSlop: { top: 6, right: 4, bottom: 6, left: 4 },
-  disabled: false,
-  data: [],
-  valueExtractor: ({ value } = {}) => value,
-  propsExtractor: () => null,
-  dropdownOffset: {
-    top: 50,
-    left: 20,
-  },
-  dropdownMargins: {
-    min: 8,
-    max: 16,
-  },
-  rippleCentered: false,
-  rippleSequential: true,
-  rippleInsets: {
-    top: 16,
-    right: 0,
-    bottom: -8,
-    left: 0,
-  },
-  rippleOpacity: 0.54,
-  shadeOpacity: 0.12,
-  rippleDuration: 400,
-  animationDuration: 225,
-  fontSize: theme.sizes.size16,
-  textColor: "rgba(0, 0, 0, .87)",
-  itemColor: "rgba(0, 0, 0, .54)",
-  baseColor: "rgba(0, 0, 0, .38)",
-  itemCount: 4,
-  itemPadding: 8,
-  supportedOrientations: [
-    "portrait",
-    "portrait-upside-down",
-    "landscape",
-    "landscape-left",
-    "landscape-right",
-  ],
-  useNativeDriver: false,
-};

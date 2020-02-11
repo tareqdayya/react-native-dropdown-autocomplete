@@ -20,15 +20,16 @@
     "react-native-material-ripple": "^0.8.0"
   },
   "devDependencies": {
-    "eslint-config-react-app": "^3.0.5",
-    "eslint-plugin-flowtype": "^2.50.3",
-    "eslint-plugin-import": "^2.14.0",
-    "eslint-plugin-jsx-a11y": "^6.1.2",
-    "eslint-plugin-react": "^7.11.1",
     "eslint-config-airbnb": "^17.1.0",
     "eslint-config-prettier": "^3.1.0",
+    "eslint-config-react-app": "^3.0.5",
     "eslint-config-with-prettier": "^4.2.0",
-    "eslint-plugin-jest": "^22.0.0"
+    "eslint-plugin-flowtype": "^2.50.3",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-jest": "^22.0.0",
+    "eslint-plugin-jsx-a11y": "^6.1.2",
+    "eslint-plugin-react": "^7.11.1",
+    "react-native": "^0.61.5"
   },
   "peerDependencies": {
     "react": "*",
