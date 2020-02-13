@@ -47,6 +47,8 @@ type AutocompleteProps = {
     rightTextExtractor?: (item: any) => void;
     fetchData?: (search: string) => Promise<any[]>;
     inputTextRef?: (el: React.RefObject<TextInput>) => void;
+
+    testID: string;
 }
 
 export class Autocomplete extends React.Component<AutocompleteProps, any> {
