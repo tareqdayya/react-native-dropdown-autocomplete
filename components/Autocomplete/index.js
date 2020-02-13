@@ -174,6 +174,7 @@ class Autocomplete extends Component {
       data,
       disableFullscreenUI,
       inputTextRef,
+      testID,
       ...dropdownProps
     } = this.props;
 
@@ -203,6 +204,7 @@ class Autocomplete extends Component {
             }}
             numberOfLines={1}
             ellipsizeMode="tail"
+            testID={`${testID}-search`}
           />
 
           {loading && (
@@ -224,6 +226,7 @@ class Autocomplete extends Component {
             top: 16,
             left: 0,
           }}
+          testID={testID}
           {...dropdownProps}
         />
       </Fragment>
@@ -266,7 +269,8 @@ Autocomplete.propTypes = {
   onDropdownShow: func,
   rightTextExtractor: func,
   fetchData: func,
-  inputTextRef: func
+  inputTextRef: func,
+  testID: string,
 };
 
 export default Autocomplete;

@@ -162,6 +162,8 @@ export default class Dropdown extends PureComponent {
     supportedOrientations: PropTypes.arrayOf(PropTypes.string),
 
     useNativeDriver: PropTypes.bool,
+
+    testID: PropTypes.string,
   };
 
   constructor(props) {
@@ -367,19 +369,14 @@ export default class Dropdown extends PureComponent {
   }
 
   onSelect(index) {
-    let {
-      data,
-      valueExtractor,
-      onChangeText,
-      animationDuration,
-      rippleDuration,
-    } = this.props;
+    const { data, onChangeValue, animationDuration, rippleDuration } = this.props;
 
-    let value = valueExtractor(data[index], index);
-    let delay = Math.max(0, rippleDuration - animationDuration);
+    const value = data[index];
 
-    if ('function' === typeof onChangeText) {
-      onChangeText(value, index, data);
+    const delay = Math.max(0, rippleDuration - animationDuration);
+
+    if (typeof onChangeValue === "function") {
+      onChangeValue(value);
     }
 
     setTimeout(() => this.onClose(value), delay);
@@ -765,6 +762,7 @@ export default class Dropdown extends PureComponent {
       listItemTextStyle,
       rightContentStyle,
       rightContentItemStyle,
+      testID,
     } = this.props;
 
     const props = !propsExtractor(item, index) && {
@@ -790,7 +788,7 @@ export default class Dropdown extends PureComponent {
     ];
 
     return (
-      <DropdownItem index={index} {...props}>
+      <DropdownItem index={index} {...props} testID={`${testID}-item`}>
         <Text
           style={[
             styles.listItemText,
@@ -923,6 +921,7 @@ export default class Dropdown extends PureComponent {
                 scrollEnabled
                 contentContainerStyle={styles.scrollContainer}
                 nestedScrollEnabled
+                testID={`${testID}-flat-list`}
               />
             </View>
           </Animated.View>
